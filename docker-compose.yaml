@@ -29,3 +29,36 @@ services:
       - kafka
     volumes:
       - ./producer/data:/app/data
+
+  timescaledb:
+    build:
+      context: ./database
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=stocksdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 1s
+      retries: 1
+
+  python-db-helper:
+    build:
+      context: ./python-db-helper
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - DB_HOST=timescaledb
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=password
+      - DB_NAME=stocksdb
+    volumes:
+      - ./python-db-helper:/app
+    command: ["python", "populate_stocks.py"]

@@ -1,0 +1,5 @@
+psycopg2-binary
+asyncpg
+aiohttp
+requests
+pandas
