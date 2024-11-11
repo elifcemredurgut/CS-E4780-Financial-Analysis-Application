@@ -138,13 +138,8 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s
-<<<<<<< HEAD
       timeout: 5s
       retries: 3
-=======
-      timeout: 1s
-      retries: 1
->>>>>>> origin/main
 
   python-db-helper:
     build:
@@ -161,7 +156,6 @@ services:
     volumes:
       - ./python-db-helper:/app
     command: ["python", "populate_stocks.py"]
-<<<<<<< HEAD
 
   fastapi:
      build:
@@ -180,5 +174,3 @@ services:
      volumes:
        - ./timescale-fastapi/src:/usr/app
      command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-=======
->>>>>>> origin/main
