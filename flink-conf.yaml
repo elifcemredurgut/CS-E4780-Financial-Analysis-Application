@@ -1,0 +1,7 @@
+blob.server.port: 6124
+taskmanager.memory.network.max: 512m
+taskmanager.memory.managed.size: 1024m
+taskmanager.numberOfTaskSlots: 2
+jobmanager.rpc.address: jobmanager
+jobmanager.memory.heap.size: 1024m
+query.server.port: 6125

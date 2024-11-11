@@ -1,0 +1,2 @@
+env.python.path: /usr/local/lib/python3.10/dist-packages
+python.executable: /usr/bin/python3
