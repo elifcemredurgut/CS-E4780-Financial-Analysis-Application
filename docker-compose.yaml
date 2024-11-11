@@ -44,8 +44,8 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s
-      timeout: 1s
-      retries: 1
+      timeout: 5s
+      retries: 3
 
   python-db-helper:
     build:
@@ -62,3 +62,21 @@ services:
     volumes:
       - ./python-db-helper:/app
     command: ["python", "populate_stocks.py"]
+
+  fastapi:
+     build:
+       context: ./timescale-fastapi
+     depends_on:
+       timescaledb:
+         condition: service_healthy
+     environment:
+       - DB_HOST=timescaledb
+       - DB_PORT=5432
+       - DB_USER=postgres
+       - DB_PASS=password
+       - DB_NAME=stocksdb
+     ports:
+       - "8000:8000"
+     volumes:
+       - ./timescale-fastapi/src:/usr/app
+     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

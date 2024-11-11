@@ -1,0 +1,7 @@
+python-dotenv
+asyncpg
+loguru
+fastapi
+uvicorn
+requests
+

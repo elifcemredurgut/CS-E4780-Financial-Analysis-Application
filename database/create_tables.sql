@@ -35,6 +35,7 @@ CREATE TABLE breakouts (
 
 CREATE UNIQUE INDEX ON ema (stock_id, dt);
 CREATE INDEX ON breakouts(stock_id, dt);
+CREATE INDEX ON stock_price(stock_id, dt);
 
 SELECT create_hypertable('stock_price', 'dt');
 SELECT create_hypertable('ema', 'dt');
