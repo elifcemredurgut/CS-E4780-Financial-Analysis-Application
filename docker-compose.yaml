@@ -137,9 +137,9 @@ services:
       - ./database:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 2s
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
 
   python-db-helper:
     build:
@@ -172,5 +172,5 @@ services:
      ports:
        - "8000:8000"
      volumes:
-       - ./timescale-fastapi/src:/usr/app
+       - ./timescale-fastapi:/usr/app
      command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -9,8 +9,11 @@ conn_pool: Optional[asyncpg.Pool] = None
 async def init_timescale() -> None:
     global conn_pool
     try:
+       # conn_pool = await asyncpg.create_pool(
+       #     dsn=os.getenv(DATABASE_URL), min_size=1, max_size=10
+        #)
         conn_pool = await asyncpg.create_pool(
-            dsn=os.getenv(DATABASE_URL), min_size=1, max_size=10
+                dsn=DATABASE_URL, min_size=1, max_size=10
         )
     except Exception as e:
         print("Connection error")
