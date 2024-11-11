@@ -102,7 +102,7 @@ def process_kafka_stream():
 
     # Configure Kafka consumer
     properties = {
-        'bootstrap.servers': 'kafka:9092',
+        'bootstrap.servers': 'kafka2:9092',
         'group.id': 'flink-consumer'
     }
     kafka_consumer = FlinkKafkaConsumer(
@@ -113,7 +113,7 @@ def process_kafka_stream():
 
     # Add Kafka source to the environment
     stream = env.add_source(kafka_consumer)
-
+    
     # Apply window processing with EMA calculations
     processed_stream = stream.map(lambda msg: json.loads(msg)) \
         .key_by(lambda msg: msg['ID']) \
@@ -141,7 +141,7 @@ def process_kafka_stream():
                 .build()
         )
     )
-
+    
     # Execute the Flink job
     env.execute("Python Flink Kafka Stream Processing with EMA Calculation")
 
