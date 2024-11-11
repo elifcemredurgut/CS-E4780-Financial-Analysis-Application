@@ -1,32 +1,126 @@
-version: '1'
+version: '2'
 
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  kafka:
+  kafka1:
     image: confluentinc/cp-kafka:latest
-    container_name: kafka
+    container_name: kafka1
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093,3@kafka3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
+      KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
+      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9092:9092"
-    depends_on:
-      - zookeeper
+      - "9093:9093"
+
+  kafka2:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka2
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_NUM_PARTITIONS: 3 
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 2
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093,3@kafka3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
+      KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
+      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
+    ports:
+      - "9094:9092"
+      - "9095:9093"
+
+  kafka3:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka3
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 3
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093,3@kafka3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
+      KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
+      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
+    ports:
+      - "9096:9092"
+      - "9097:9093"
+
+  kafka4:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka4
+    environment:
+      KAFKA_PROCESS_ROLES: broker
+      KAFKA_NODE_ID: 4
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093,3@kafka3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka4:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
+      KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
+      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
+    ports:
+      - "9098:9092"
+
+  kafka5:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka5
+    environment:
+      KAFKA_PROCESS_ROLES: broker
+      KAFKA_NODE_ID: 5
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093,3@kafka3:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka5:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
+      KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
+      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
+    ports:
+      - "9099:9092"
+  
+  kafka-init-topics:
+    image: confluentinc/cp-kafka:latest
+    command: [ "/bin/bash", "-c", "/create_topic.sh"]
+    volumes:
+      - type: bind
+        source: ./producer/create_topic.sh
+        target: /create_topic.sh
+    depends_on:
+      kafka1:
+        condition: service_started
+    init: true
+
+
   producer:
     build: ./producer
     depends_on:
-      - kafka
+      - kafka-init-topics
+      - kafka1
+      - kafka2
+      - kafka3
+      - kafka4
+      - kafka5
     volumes:
       - ./producer/data:/app/data
 
