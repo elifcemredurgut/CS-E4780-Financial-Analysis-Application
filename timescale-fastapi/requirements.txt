@@ -4,4 +4,6 @@ loguru
 fastapi
 uvicorn
 requests
+redis
+redis-timeseries
 

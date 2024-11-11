@@ -21,7 +21,7 @@ async def get_stock_breakouts(
     db: Pool = Depends(get_timescale),
 ):
     query = """
-        SELECT breakouts.stock_id, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock_price ON stock_price.stock_id=breakouts.stock_id AND stock_price.dt=breakouts.dt WHERE breakouts.stock_id = $1 ORDER BY breakouts.dt DESC;
+        SELECT breakouts.stock_id, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock_price ON stock_price.stock_id=breakouts.stock_id WHERE breakouts.stock_id = $1 ORDER BY breakouts.dt DESC;
     """
     async with db.acquire() as conn:
         rows = await conn.fetch(query, stock_id)
