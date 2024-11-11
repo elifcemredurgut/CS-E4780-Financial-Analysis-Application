@@ -187,9 +187,7 @@ services:
     environment:
       - |
         FLINK_PROPERTIES=
-        jobmanager.rpc.address: jobmanager   
-    depends_on:
-      - kafka
+        jobmanager.rpc.address: jobmanager  
     volumes:
       - ./consumer/flink_job.py:/opt/flink_job.py  
   taskmanager:
