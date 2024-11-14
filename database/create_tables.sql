@@ -13,6 +13,7 @@ CREATE TABLE ema (
 	prev_ema100 DOUBLE PRECISION,
 	ema38 DOUBLE PRECISION,
 	ema100 DOUBLE PRECISION,
+	latency_start TIMESTAMP NOT NULL,
 	PRIMARY KEY (stock_id, dt),
 	CONSTRAINT fk_stock FOREIGN KEY (stock_id) REFERENCES stock (id)
 );
@@ -29,6 +30,8 @@ CREATE TABLE breakouts (
 	stock_id INTEGER NOT NULL,
 	dt TIMESTAMP NOT NULL,
 	breakout_type TEXT NOT NULL,
+	latency_start TIMESTAMP NOT NULL,
+	latency_end TIMESTAMP NOT NULL,
 	PRIMARY KEY (stock_id, dt),
 	CONSTRAINT fk_stock FOREIGN KEY (stock_id) REFERENCES stock (id)
 );
@@ -49,7 +52,7 @@ CREATE OR REPLACE FUNCTION record_bull_breakout()
 BEGIN
 	IF NEW.ema38 > NEW.ema100 AND NEW.prev_ema38 <= NEW.prev_ema100 THEN
 		INSERT INTO breakouts
-			VALUES(NEW.stock_id, NEW.dt, 'bull')
+			VALUES(NEW.stock_id, NEW.dt, 'bull', NEW.latency_start, NOW())
 			ON CONFLICT DO NOTHING;
 	END IF;
 	RETURN NEW;
@@ -61,7 +64,7 @@ CREATE OR REPLACE FUNCTION record_bear_breakout()
 BEGIN
         IF NEW.ema38 < NEW.ema100 AND NEW.prev_ema38 >= NEW.prev_ema100 THEN 
 		INSERT INTO breakouts
-                        VALUES(NEW.stock_id, NEW.dt, 'bear')
+                        VALUES(NEW.stock_id, NEW.dt, 'bear', NEW.latency_start, NOW())
 			ON CONFLICT DO NOTHING;
         END IF;
         RETURN NEW;
