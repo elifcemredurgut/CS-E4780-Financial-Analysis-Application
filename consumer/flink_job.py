@@ -3,11 +3,12 @@ import json
 import psycopg2
 from pyflink.datastream import StreamExecutionEnvironment, TimeCharacteristic
 from pyflink.datastream.functions import ProcessWindowFunction
-from pyflink.datastream.window import TumblingProcessingTimeWindows
-from pyflink.common import Time, Types, Row
+from pyflink.datastream.window import TumblingProcessingTimeWindows, TumblingEventTimeWindows
+from pyflink.common import Time, Types, Row, WatermarkStrategy, Duration
 from pyflink.datastream.connectors import FlinkKafkaConsumer
 from pyflink.datastream.connectors.jdbc import JdbcSink, JdbcConnectionOptions, JdbcExecutionOptions
 from pyflink.common.serialization import SimpleStringSchema
+from pyflink.common.watermark_strategy import TimestampAssigner
 from typing import Tuple, Iterable, Dict
 from datetime import datetime
 from pyflink.common.typeinfo import RowTypeInfo
@@ -61,6 +62,10 @@ class MyProcessWindowFunction(ProcessWindowFunction):
             f"{element['trading_date']} {element['Trading time']}",
             "%d-%m-%Y %H:%M:%S.%f"
         ))
+        element_min = min(elements, key=lambda element: datetime.strptime(
+            f"{element['trading_date']} {element['Trading time']}",
+            "%d-%m-%Y %H:%M:%S.%f"
+        ))
         try:
             symbol = element['ID']
             last_price = element['Last']
@@ -87,7 +92,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 )
 
                 # Log the type and content of the row for verification
-                logger.info(f"{row}, {last_price}, {symbol} {trading_time}")
+                logger.info(f"{row}, {last_price}, {symbol} {trading_date} {trading_time} {element_min['Trading time']}")
 
                 # Yield the row directly
                 yield row
@@ -96,11 +101,18 @@ class MyProcessWindowFunction(ProcessWindowFunction):
         except (KeyError, ValueError, json.JSONDecodeError) as e:
             logger.error(f"Error processing record: {e}")
 
+class CustomTimestampAssigner(TimestampAssigner):
+    def extract_timestamp(self, element, record_timestamp):
+        # Convert 'trading_date' and 'Trading time' into a single timestamp in milliseconds
+        dt = datetime.strptime(f"{element['trading_date']} {element['Trading time']}", "%d-%m-%Y %H:%M:%S.%f")
+        #logger.info(f"{dt}")
+        return int(dt.timestamp() * 1000)  # Convert to milliseconds
+
 def process_kafka_stream():
     # Set up Flink environment
     env = StreamExecutionEnvironment.get_execution_environment()
     env.set_parallelism(1)
-    env.set_stream_time_characteristic(TimeCharacteristic.ProcessingTime)
+    env.set_stream_time_characteristic(TimeCharacteristic.EventTime)
 
     # Configure Kafka consumer
     properties = {
@@ -113,15 +125,27 @@ def process_kafka_stream():
         properties=properties
     )
 
-    # Add Kafka source to the environment
-    stream = env.add_source(kafka_consumer)
-    
+        # Add Kafka source to the environment and assign timestamps and watermarks
+    stream = env.add_source(kafka_consumer).map(lambda msg: json.loads(msg))
+
+    stream = stream.assign_timestamps_and_watermarks(
+        WatermarkStrategy
+        .for_bounded_out_of_orderness(Duration.of_seconds(10))
+        .with_timestamp_assigner(CustomTimestampAssigner())
+    )
+
+    # Apply event time window processing
+    processed_stream = stream \
+        .key_by(lambda msg: msg['ID']) \
+        .window(TumblingEventTimeWindows.of(Time.minutes(5))) \
+        .process(MyProcessWindowFunction())
+    """
     # Apply window processing with EMA calculations
     processed_stream = stream.map(lambda msg: json.loads(msg)) \
         .key_by(lambda msg: msg['ID']) \
-        .window(TumblingProcessingTimeWindows.of(Time.minutes(1))) \
+        .window(TumblingProcessingTimeWindows.of(Time.minutes(2))) \
         .process(MyProcessWindowFunction())
-
+    """
     # Set up JDBC sink for writing processed data to TimescaleDB
     type_name = ['stock_id', 'dt', 'prev_ema38', 'prev_ema100', 'ema38', 'ema100']
     type_schema = [Types.INT(), Types.SQL_TIMESTAMP(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE()]
@@ -129,7 +153,7 @@ def process_kafka_stream():
     processed_stream = processed_stream.map(lambda r: r, output_type=type_info)
     processed_stream.add_sink(
         JdbcSink.sink(
-            "INSERT INTO ema (stock_id, dt, prev_ema38, prev_ema100, ema38, ema100) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO ema (stock_id, dt, prev_ema38, prev_ema100, ema38, ema100, latency_start) VALUES (?, ?, ?, ?, ?, ?, '2024-01-01 00:00:00')",
             type_info,
             JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
                 .with_url("jdbc:postgresql://timescaledb:5432/stocksdb")
