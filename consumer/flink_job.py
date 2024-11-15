@@ -75,9 +75,11 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 prev_ema_100 = self.ema_calculator_100.previous_ema.get(symbol, 0)
                 ema_value_38 = self.ema_calculator_38.calculate_ema(last_price, symbol, 38)
                 ema_value_100 = self.ema_calculator_100.calculate_ema(last_price, symbol, 100)
+                dt = datetime.strptime(f"{trading_date} {trading_time}", "%d-%m-%Y %H:%M:%S.%f")
 
                 row = Row(
                     stock_id,
+                    dt,
                     prev_ema_38,
                     prev_ema_100,
                     ema_value_38,
@@ -85,7 +87,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 )
 
                 # Log the type and content of the row for verification
-                logger.info(f"{row}, {last_price}, {symbol}")
+                logger.info(f"{row}, {last_price}, {symbol} {trading_time}")
 
                 # Yield the row directly
                 yield row
@@ -121,13 +123,13 @@ def process_kafka_stream():
         .process(MyProcessWindowFunction())
 
     # Set up JDBC sink for writing processed data to TimescaleDB
-    type_name = ['stock_id', 'prev_ema38', 'prev_ema100', 'ema38', 'ema100']
-    type_schema = [Types.INT(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE()]
+    type_name = ['stock_id', 'dt', 'prev_ema38', 'prev_ema100', 'ema38', 'ema100']
+    type_schema = [Types.INT(), Types.SQL_TIMESTAMP(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE()]
     type_info = RowTypeInfo(type_schema, type_name)
     processed_stream = processed_stream.map(lambda r: r, output_type=type_info)
     processed_stream.add_sink(
         JdbcSink.sink(
-            "INSERT INTO ema (stock_id, dt, prev_ema38, prev_ema100, ema38, ema100) VALUES (?, '2024-01-01 00:00:00', ?, ?, ?, ?)",
+            "INSERT INTO ema (stock_id, dt, prev_ema38, prev_ema100, ema38, ema100) VALUES (?, ?, ?, ?, ?, ?)",
             type_info,
             JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
                 .with_url("jdbc:postgresql://timescaledb:5432/stocksdb")
