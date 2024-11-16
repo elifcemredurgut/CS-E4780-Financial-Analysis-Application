@@ -12,6 +12,7 @@ from pyflink.common.watermark_strategy import TimestampAssigner
 from typing import Tuple, Iterable, Dict
 from datetime import datetime
 from pyflink.common.typeinfo import RowTypeInfo
+from pyflink.datastream.output_tag import OutputTag
 
 # Set up logging to write to the TaskManager log
 logging.basicConfig(level=logging.INFO)
@@ -35,9 +36,9 @@ class MyProcessWindowFunction(ProcessWindowFunction):
         self.ema_calculator_38 = EmaCalculator(38)
         self.ema_calculator_100 = EmaCalculator(100)
         self.symbol_id_map = self.load_symbol_id_map()
+        self.side_output_tag = OutputTag('raw-stock-price', Types.ROW([Types.INT(), Types.SQL_TIMESTAMP(), Types.DOUBLE()]))
 
     def load_symbol_id_map(self) -> Dict[str, int]:
-        """Loads the symbol-ID mapping from the database into a dictionary."""
         try:
             conn = psycopg2.connect(
                 dbname="stocksdb",
@@ -58,19 +59,33 @@ class MyProcessWindowFunction(ProcessWindowFunction):
 
     def process(self, key: str, context: ProcessWindowFunction.Context,
                 elements: Iterable[Tuple[str, int]]) -> Iterable[str]:
+        for element in elements:
+            symbol = element['ID']
+            price = float(element['Last'])
+            dt = datetime.strptime(f"{element['trading_date']} {element['Trading time']}", "%d-%m-%Y %H:%M:%S.%f")
+
+            # Get stock ID from the symbol ID map
+            stock_id = self.symbol_id_map.get(symbol)
+
+            row_price = Row(
+                f0=stock_id,
+                f1=dt ,
+                f2=price 
+            )
+
+            if stock_id is not None:
+                # Output raw stock prices to the side output
+                logger.info(f"raw price: {row_price}/n ")
+                yield self.side_output_tag, row_price
+
+        #get the last element in the current window
         element = max(elements, key=lambda element: datetime.strptime(
-            f"{element['trading_date']} {element['Trading time']}",
-            "%d-%m-%Y %H:%M:%S.%f"
-        ))
-        element_min = min(elements, key=lambda element: datetime.strptime(
             f"{element['trading_date']} {element['Trading time']}",
             "%d-%m-%Y %H:%M:%S.%f"
         ))
         try:
             symbol = element['ID']
             last_price = element['Last']
-            trading_time = element['Trading time']
-            trading_date = element['trading_date']
             # Get stock ID from the cached dictionary
             stock_id = self.symbol_id_map.get(symbol)
 
@@ -80,7 +95,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 prev_ema_100 = self.ema_calculator_100.previous_ema.get(symbol, 0)
                 ema_value_38 = self.ema_calculator_38.calculate_ema(last_price, symbol, 38)
                 ema_value_100 = self.ema_calculator_100.calculate_ema(last_price, symbol, 100)
-                dt = datetime.strptime(f"{trading_date} {trading_time}", "%d-%m-%Y %H:%M:%S.%f")
+                dt = datetime.strptime(f"{element['trading_date']} {element['Trading time']}", "%d-%m-%Y %H:%M:%S.%f")
 
                 row = Row(
                     stock_id,
@@ -92,7 +107,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 )
 
                 # Log the type and content of the row for verification
-                logger.info(f"{row}, {last_price}, {symbol} {trading_date} {trading_time} {element_min['Trading time']}")
+                logger.info(f" {last_price}, {symbol} {dt} /n")
 
                 # Yield the row directly
                 yield row
@@ -139,13 +154,11 @@ def process_kafka_stream():
         .key_by(lambda msg: msg['ID']) \
         .window(TumblingEventTimeWindows.of(Time.minutes(5))) \
         .process(MyProcessWindowFunction())
-    """
-    # Apply window processing with EMA calculations
-    processed_stream = stream.map(lambda msg: json.loads(msg)) \
-        .key_by(lambda msg: msg['ID']) \
-        .window(TumblingProcessingTimeWindows.of(Time.minutes(2))) \
-        .process(MyProcessWindowFunction())
-    """
+
+    # Get the side output for raw stock prices
+    raw_stock_prices = processed_stream.get_side_output(MyProcessWindowFunction().side_output_tag)
+
+    
     # Set up JDBC sink for writing processed data to TimescaleDB
     type_name = ['stock_id', 'dt', 'prev_ema38', 'prev_ema100', 'ema38', 'ema100']
     type_schema = [Types.INT(), Types.SQL_TIMESTAMP(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE()]
@@ -155,6 +168,27 @@ def process_kafka_stream():
         JdbcSink.sink(
             "INSERT INTO ema (stock_id, dt, prev_ema38, prev_ema100, ema38, ema100, latency_start) VALUES (?, ?, ?, ?, ?, ?, '2024-01-01 00:00:00')",
             type_info,
+            JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                .with_url("jdbc:postgresql://timescaledb:5432/stocksdb")
+                .with_driver_name("org.postgresql.Driver")
+                .with_user_name("postgres")
+                .with_password("password")
+                .build(),
+            JdbcExecutionOptions.builder()
+                .with_batch_interval_ms(200)
+                .with_batch_size(1000)
+                .build()
+        )
+    )
+    
+    type_name_price = ['f0', 'f1', 'f2']
+    type_schema_price = [Types.INT(), Types.SQL_TIMESTAMP(), Types.DOUBLE()]
+    type_info_price = RowTypeInfo(type_schema_price, type_name_price)
+    raw_stock_prices = raw_stock_prices.map(lambda r: r, output_type=type_info_price)
+    raw_stock_prices.add_sink(
+        JdbcSink.sink(
+            "INSERT INTO stock_price (stock_id, dt, price) VALUES (?, ?, ?)",
+            type_info_price,
             JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
                 .with_url("jdbc:postgresql://timescaledb:5432/stocksdb")
                 .with_driver_name("org.postgresql.Driver")
