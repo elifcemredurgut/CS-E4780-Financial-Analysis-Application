@@ -15,7 +15,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_LOG_RETENTION_MINUTES: 4
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9092:9092"
@@ -35,7 +35,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_LOG_RETENTION_MINUTES: 4
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9094:9092"
@@ -55,7 +55,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_LOG_RETENTION_MINUTES: 4
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9096:9092"
@@ -75,7 +75,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_LOG_RETENTION_MINUTES: 4
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9098:9092"
@@ -94,7 +94,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 2
+      KAFKA_LOG_RETENTION_MINUTES: 4
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9099:9092"
