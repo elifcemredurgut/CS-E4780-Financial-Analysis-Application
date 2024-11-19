@@ -38,6 +38,7 @@ CREATE TABLE breakouts (
 
 CREATE UNIQUE INDEX ON ema (stock_id, dt);
 CREATE INDEX ON breakouts(stock_id, dt);
+CREATE UNIQUE INDEX ON stock_price (stock_id, dt);
 
 SELECT create_hypertable('stock_price', 'dt');
 SELECT create_hypertable('ema', 'dt');
@@ -49,10 +50,12 @@ SELECT add_retention_policy('stock_price', INTERVAL '7 days');
 -- TRIGGERS HERE
 CREATE OR REPLACE FUNCTION record_bull_breakout()
 	RETURNS trigger AS $record_bull_breakout$
+DECLARE
+        breakout_time TIMESTAMP := NOW();
 BEGIN
 	IF NEW.ema38 > NEW.ema100 AND NEW.prev_ema38 <= NEW.prev_ema100 THEN
 		INSERT INTO breakouts
-			VALUES(NEW.stock_id, NEW.dt, 'bull', NEW.latency_start, NOW())
+			VALUES(NEW.stock_id, NEW.dt, 'bull', NEW.latency_start, breakout_time)
 			ON CONFLICT DO NOTHING;
 	END IF;
 	RETURN NEW;
@@ -61,10 +64,12 @@ $record_bull_breakout$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION record_bear_breakout()
 	RETURNS trigger AS $record_bear_breakout$
+DECLARE
+        breakout_time TIMESTAMP := NOW();
 BEGIN
-        IF NEW.ema38 < NEW.ema100 AND NEW.prev_ema38 >= NEW.prev_ema100 THEN 
+        IF NEW.ema38 < NEW.ema100 AND NEW.prev_ema38 >= NEW.prev_ema100 THEN
 		INSERT INTO breakouts
-                        VALUES(NEW.stock_id, NEW.dt, 'bear', NEW.latency_start, NOW())
+                        VALUES(NEW.stock_id, NEW.dt, 'bear', NEW.latency_start, breakout_time)
 			ON CONFLICT DO NOTHING;
         END IF;
         RETURN NEW;

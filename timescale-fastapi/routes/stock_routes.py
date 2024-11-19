@@ -15,20 +15,42 @@ stock_router = APIRouter()
 def read_root():
     return {"message": "Hello World"}
 
-@stock_router.get("/breakouts/{stock_id}", response_model=List[Breakout])
-async def get_stock_breakouts(
-    stock_id: int = Path(..., description="ID of desired stock"),
-    db: Pool = Depends(get_timescale),
+@stock_router.get("/breakouts/recent", response_model=List[Breakout])
+async def get_recent_breakouts(
+        db: Pool = Depends(get_timescale)
 ):
     query = """
-        SELECT breakouts.stock_id, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock_price ON stock_price.stock_id=breakouts.stock_id WHERE breakouts.stock_id = $1 ORDER BY breakouts.dt DESC;
-    """
+        SELECT breakouts.stock_id, stock.symbol, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock_price ON stock_price.stock_id=breakouts.stock_id INNER JOIN stock ON stock.id = breakouts.stock_id ORDER BY breakouts.dt DESC LIMIT 20;
+        """
     async with db.acquire() as conn:
-        rows = await conn.fetch(query, stock_id)
+        rows = await conn.fetch(query)
     if not rows:
         raise HTTPException(status_code=404, detail="No breakouts found")
     return [
         Breakout(
+            stock_symbol = row["symbol"],
+            timestamp = row["dt"],
+            breakout_type = row['breakout_type'],
+            price = row["price"],
+        )
+        for row in rows
+    ]
+
+@stock_router.get("/breakouts/{stock_symbol}", response_model=List[Breakout])
+async def get_stock_breakouts(
+    stock_symbol: str = Path(..., description="Symbol of desired stock"),
+    db: Pool = Depends(get_timescale),
+):
+    query = """
+        SELECT breakouts.stock_id, stock.symbol, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock_price ON stock_price.stock_id=breakouts.stock_id INNER JOIN stock ON stock.id = breakouts.stock_id WHERE stock.symbol = $1 ORDER BY breakouts.dt DESC;
+    """
+    async with db.acquire() as conn:
+        rows = await conn.fetch(query, stock_symbol)
+    if not rows:
+        raise HTTPException(status_code=404, detail="No breakouts found")
+    return [
+        Breakout(
+            stock_symbol = row["symbol"],
             timestamp = row["dt"],
             breakout_type = row["breakout_type"],
             price = row["price"],

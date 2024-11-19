@@ -11,6 +11,7 @@ class StockPrice(BaseModel):
     price: float
 
 class Breakout(BaseModel):
+    stock_symbol: str
     timestamp: datetime
     breakout_type: str
     price: float
