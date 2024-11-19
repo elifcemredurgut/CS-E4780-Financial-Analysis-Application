@@ -64,11 +64,13 @@ try:
                     value = f"{datetime.datetime.now()}: Trading date cannot be null"
                     producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
                 else:
-                    current_time = datetime.datetime.now().strftime('%H:%M:%S.%f')
-                    value = {"ID": stock_id, "SecType": sec_type, "Last": last, "Trading time": trading_time, "trading_date": trading_date, "current_time": current_time}
+                    current_datetime = datetime.datetime.now()
+                    current_time = current_datetime.strftime('%H:%M:%S.%f')
+                    current_date = current_datetime.strftime("%d/%m/%Y")
+
+                    value = {"ID": stock_id, "SecType": sec_type, "Last": last, "Trading time": trading_time, "trading_date": trading_date, "current_time": current_time, "current_date": current_date}
                     producer.produce("stocks", key=stock_id, value=json.dumps(value).encode('utf-8'))
                 producer.flush() 
-
 
 except KafkaError as e:
     print(f"Kafka error: {e}")
