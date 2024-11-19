@@ -51,7 +51,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
             cursor.execute("SELECT symbol, id FROM stock;")
             symbol_id_map = {row[0]: row[1] for row in cursor.fetchall()}
             conn.close()
-            logger.info("Loaded symbol-ID map from the database.")
+            logger.info("Loaded symbol-ID map from the databasee.")
             return symbol_id_map
         except psycopg2.Error as e:
             logger.error(f"Error loading symbol-ID map: {e}")
