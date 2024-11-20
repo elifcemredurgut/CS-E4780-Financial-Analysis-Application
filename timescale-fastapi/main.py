@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from database.timescale import init_timescale, close_timescale
 from routes.stock_routes import stock_router
 from database.redisclient import init_redis, close_redis
+import asyncio
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,3 +16,4 @@ async def lifespan(app: FastAPI):
 
 app: FastAPI = FastAPI(lifespan=lifespan, title="FastAPI for timescale stocks")
 app.include_router(stock_router)
+

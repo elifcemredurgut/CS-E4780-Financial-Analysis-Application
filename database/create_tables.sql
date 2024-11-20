@@ -27,6 +27,7 @@ CREATE TABLE stock_price (
 );
 
 CREATE TABLE breakouts (
+	id SERIAL,
 	stock_id INTEGER NOT NULL,
 	dt TIMESTAMP NOT NULL,
 	breakout_type TEXT NOT NULL,
