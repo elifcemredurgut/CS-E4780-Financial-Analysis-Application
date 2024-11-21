@@ -26,27 +26,18 @@ async def get_recent_breakouts(
     #Redis Jail
     redis_client = Redis(connection_pool=redis_conn_pool)
     async with db.acquire() as conn:
-        recent_row = await conn.fetch("SELECT id FROM breakouts ORDER BY latency_end DESC LIMIT 1")
+        recent_row = await conn.fetch("SELECT id FROM breakouts ORDER BY id DESC LIMIT 1")
     if recent_row:
         breakout_id = recent_row[0]['id']
         exists = await redis_client.hexists(f"breakouts", breakout_id)
         if exists:
             recent_breakouts = []
-            recent_breakout_ids = await redis_client.hkeys("breakouts") 
-            print(recent_breakout_ids)
+            recent_breakout_ids = await redis_client.hkeys("breakouts")
             for breakout_id in recent_breakout_ids:
                 breakout_data = await redis_client.hget("breakouts", breakout_id.decode("utf-8"))
                 if breakout_data:
                     recent_breakouts.append(json.loads(breakout_data.decode("utf-8")))
-            print("yay cache")
             return recent_breakouts 
-
-   # breakouts = await redis_client.lrange("recent", 0, 19)
-   # cached_breakout_ids = [json.loads(breakout.decode("utf-8")).get("id") for breakout in breakouts]
-   # breakouts_dict = [json.loads(breakout.decode("utf-8")) for breakout in breakouts]
-   # if breakouts and all(breakout_id in cached_breakout_ids for breakout_id in recent_breakout_ids):
-    #    print("YAY REDIS")
-    #    return breakouts_dict
 
     #DB stuff
     query = """
@@ -67,6 +58,7 @@ async def get_recent_breakouts(
         for row in rows
     ]
 
+    await redis_client.delete("breakouts")
     breakouts_dict = [breakout.dict() for breakout in breakouts]
     for breakout in breakouts_dict:
         breakout_id = breakout["breakout_id"]
@@ -78,15 +70,38 @@ async def get_recent_breakouts(
 async def get_stock_breakouts(
     stock_symbol: str = Path(..., description="Symbol of desired stock"),
     db: Pool = Depends(get_timescale),
+    redis_conn_pool: ConnectionPool = Depends(get_redis)
 ):
+    redis_client = Redis(connection_pool=redis_conn_pool)
+    exists = await redis_client.hexists(f"stocks", stock_symbol)
+    if exists:
+        async with db.acquire() as conn:
+            recent_breakouts = await conn.fetch("SELECT id, stock_id FROM breakouts ORDER BY id DESC LIMIT 20;")
+            stock_id = await conn.fetch("SELECT id FROM stock WHERE symbol = '"+ stock_symbol + "';")
+        search_data = await redis_client.hget("stocks", stock_symbol)
+        search_data = json.loads(search_data.decode('utf-8'))
+        found = False
+        for recent in recent_breakouts:
+            if stock_id[0]['id'] == recent['stock_id']:
+                found = False
+                for search in search_data:
+                    if recent['id'] == search["breakout_id"]:
+                        found = True
+                        break
+                if not found:
+                    break
+        if found:
+            return search_data
+
+    #db stuff
     query = """
-        SELECT breakouts.id, breakouts.stock_id, stock.symbol, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock_price ON stock_price.stock_id=breakouts.stock_id INNER JOIN stock ON stock.id = breakouts.stock_id WHERE stock.symbol = $1 ORDER BY breakouts.dt DESC;
+        SELECT breakouts.id, breakouts.stock_id, stock.symbol, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock ON stock.id = breakouts.stock_id LEFT JOIN LATERAL (SELECT stock_price.price FROM stock_price WHERE stock_price.stock_id = breakouts.stock_id ORDER BY ABS(EXTRACT(EPOCH FROM (stock_price.dt - breakouts.dt))) LIMIT 1) stock_price ON true WHERE stock.symbol = $1 ORDER BY breakouts.dt DESC;
     """
     async with db.acquire() as conn:
         rows = await conn.fetch(query, stock_symbol)
     if not rows:
         raise HTTPException(status_code=404, detail="No breakouts found")
-    return [
+    breakouts =  [
         Breakout(
             breakout_id = row['id'],
             stock_symbol = row["symbol"],
@@ -97,3 +112,9 @@ async def get_stock_breakouts(
         for row in rows
     ]
 
+    #store he search
+    await redis_client.hdel("stocks", stock_symbol)
+    breakouts_dict = [breakout.dict() for breakout in breakouts]
+    await redis_client.hset("stocks", stock_symbol, json.dumps(breakouts_dict, default=str))
+    await redis_client.expire(f"stocks:{stock_symbol}", 3600)
+    return breakouts
