@@ -52,6 +52,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
         except psycopg2.Error as e:
             logger.error(f"Error loading symbol-ID map: {e}")
             return {}
+
     def process(self, key: str, context: ProcessWindowFunction.Context,
                 elements: Iterable[Tuple[str, int]]) -> Iterable[str]:
         try:
@@ -72,7 +73,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                     f1=dt,
                     f2=avg_price
                 )
-                logger.info(f"raw price: {symbol} {dt} {avg_price}/n ")
+                #logger.info(f"raw price: {symbol} {dt} {avg_price}/n ")
                 yield self.side_output_tag, row_price
             #2nd Part - Calculating EMA's for the last data in the window
             #get the last element in the current window
@@ -134,7 +135,7 @@ def process_kafka_stream():
         deserialization_schema=SimpleStringSchema(),
         properties=properties
     )
-        # Add Kafka source to the environment and assign timestamps and watermarks
+    # Add Kafka source to the environment and assign timestamps and watermarks
     stream = env.add_source(kafka_consumer).map(lambda msg: json.loads(msg))
     stream = stream.assign_timestamps_and_watermarks(
         WatermarkStrategy

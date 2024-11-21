@@ -203,3 +203,8 @@ services:
         taskmanager.numberOfTaskSlots: 2  
     volumes:
       - ./consumer/flink_job.py:/opt/flink_job.py
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
