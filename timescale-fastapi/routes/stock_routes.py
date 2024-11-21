@@ -11,6 +11,7 @@ from models.stock_models import (
     Breakout,
     BreakoutBatch,
 )
+from datetime import datetime
 
 stock_router = APIRouter()
 
@@ -41,7 +42,7 @@ async def get_recent_breakouts(
 
     #DB stuff
     query = """
-        SELECT breakouts.id, breakouts.stock_id, stock.symbol, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock ON stock.id = breakouts.stock_id LEFT JOIN LATERAL (SELECT stock_price.price FROM stock_price WHERE stock_price.stock_id = breakouts.stock_id ORDER BY ABS(EXTRACT(EPOCH FROM (stock_price.dt - breakouts.dt))) LIMIT 1) stock_price ON true ORDER BY breakouts.dt DESC LIMIT 20;
+        SELECT breakouts.id, breakouts.stock_id, stock.symbol, breakouts.dt, breakouts.breakout_type, stock_price.price, breakouts.latency_start, breakouts.latency_end FROM breakouts INNER JOIN stock ON stock.id = breakouts.stock_id LEFT JOIN LATERAL (SELECT stock_price.price FROM stock_price WHERE stock_price.stock_id = breakouts.stock_id ORDER BY ABS(EXTRACT(EPOCH FROM (stock_price.dt - breakouts.dt))) LIMIT 1) stock_price ON true ORDER BY breakouts.dt DESC LIMIT 20;
         """
     async with db.acquire() as conn:
         rows = await conn.fetch(query)
@@ -54,6 +55,7 @@ async def get_recent_breakouts(
             timestamp = row["dt"],
             breakout_type = row['breakout_type'],
             price = row["price"],
+            latency = (row["latency_end"] - row["latency_start"]).total_seconds(),
         )
         for row in rows
     ]
@@ -95,12 +97,13 @@ async def get_stock_breakouts(
 
     #db stuff
     query = """
-        SELECT breakouts.id, breakouts.stock_id, stock.symbol, breakouts.dt, breakouts.breakout_type, stock_price.price FROM breakouts INNER JOIN stock ON stock.id = breakouts.stock_id LEFT JOIN LATERAL (SELECT stock_price.price FROM stock_price WHERE stock_price.stock_id = breakouts.stock_id ORDER BY ABS(EXTRACT(EPOCH FROM (stock_price.dt - breakouts.dt))) LIMIT 1) stock_price ON true WHERE stock.symbol = $1 ORDER BY breakouts.dt DESC;
+        SELECT breakouts.id, breakouts.stock_id, stock.symbol, breakouts.dt, breakouts.breakout_type, stock_price.price, breakouts.latency_start, breakouts.latency_end FROM breakouts INNER JOIN stock ON stock.id = breakouts.stock_id LEFT JOIN LATERAL (SELECT stock_price.price FROM stock_price WHERE stock_price.stock_id = breakouts.stock_id ORDER BY ABS(EXTRACT(EPOCH FROM (stock_price.dt - breakouts.dt))) LIMIT 1) stock_price ON true WHERE stock.symbol = $1 ORDER BY breakouts.dt DESC;
     """
     async with db.acquire() as conn:
         rows = await conn.fetch(query, stock_symbol)
     if not rows:
         raise HTTPException(status_code=404, detail="No breakouts found")
+    dt_format = "%Y-%m-%d %H:%M:%S.%f"
     breakouts =  [
         Breakout(
             breakout_id = row['id'],
@@ -108,6 +111,7 @@ async def get_stock_breakouts(
             timestamp = row["dt"],
             breakout_type = row["breakout_type"],
             price = row["price"],
+            latency =  (row["latency_end"] - row["latency_start"]).total_seconds(),
         )
         for row in rows
     ]
@@ -119,13 +123,13 @@ async def get_stock_breakouts(
     await redis_client.expire(f"stocks:{stock_symbol}", 3600)
     return breakouts
 
-@stock_router.get("/stocks", response_model=List[Breakout])
-async def get_stock_breakouts(
+@stock_router.get("/stocks", response_model=List[Stock])
+async def get_stocks(
     db: Pool = Depends(get_timescale),
 ):
     query = "SELECT * FROM stock;"
-    async with db.aquire() as conn:
-        rows await conn.fetch(query)
+    async with db.acquire() as conn:
+        rows = await conn.fetch(query)
     if not rows:
         raise HTTPException(status_code=404, detail="No stocks found")
     stocks = [
@@ -138,15 +142,14 @@ async def get_stock_breakouts(
         ]
     return stocks
 
-@stock_router.get("/stocks/{stock_symbol}", response_model=List[Breakout])
-async def get_stock_breakouts(
+@stock_router.get("/stocks/{stock_symbol}", response_model=List[Stock])
+async def get_stock_from_symbol(
     stock_symbol: str = Path(..., description="Symbol of desired stock"),
     db: Pool = Depends(get_timescale),
-    redis_conn_pool: ConnectionPool = Depends(get_redis)
 ):
-    query = f"SELECT * FROM stock WHERE stock_symbol = {stock_symbol};"
-    async with db.aquire() as conn:
-        rows await conn.fetch(query)
+    query = "SELECT * FROM stock WHERE symbol = $1;"
+    async with db.acquire() as conn:
+        rows = await conn.fetch(query, stock_symbol)
     if not rows:
         raise HTTPException(status_code=404, detail="No stocks found")
     stocks = [
