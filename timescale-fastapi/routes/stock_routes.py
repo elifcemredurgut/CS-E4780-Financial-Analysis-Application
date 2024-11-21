@@ -118,3 +118,43 @@ async def get_stock_breakouts(
     await redis_client.hset("stocks", stock_symbol, json.dumps(breakouts_dict, default=str))
     await redis_client.expire(f"stocks:{stock_symbol}", 3600)
     return breakouts
+
+@stock_router.get("/stocks", response_model=List[Breakout])
+async def get_stock_breakouts(
+    db: Pool = Depends(get_timescale),
+):
+    query = "SELECT * FROM stock;"
+    async with db.aquire() as conn:
+        rows await conn.fetch(query)
+    if not rows:
+        raise HTTPException(status_code=404, detail="No stocks found")
+    stocks = [
+            Stock(
+                stock_id = row['id'],
+                symbol = row['symbol'],
+                security_type = row['security_type'],
+            )
+            for row in rows
+        ]
+    return stocks
+
+@stock_router.get("/stocks/{stock_symbol}", response_model=List[Breakout])
+async def get_stock_breakouts(
+    stock_symbol: str = Path(..., description="Symbol of desired stock"),
+    db: Pool = Depends(get_timescale),
+    redis_conn_pool: ConnectionPool = Depends(get_redis)
+):
+    query = f"SELECT * FROM stock WHERE stock_symbol = {stock_symbol};"
+    async with db.aquire() as conn:
+        rows await conn.fetch(query)
+    if not rows:
+        raise HTTPException(status_code=404, detail="No stocks found")
+    stocks = [
+            Stock(
+                stock_id = row['id'],
+                symbol = row['symbol'],
+                security_type = row['security_type'],
+            )
+            for row in rows
+        ]
+    return stocks
