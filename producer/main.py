@@ -72,7 +72,6 @@ try:
                     producer.produce("stocks", key=stock_id, value=json.dumps(value).encode('utf-8'))
                 producer.flush() 
 
-
 except KafkaError as e:
     print(f"Kafka error: {e}")
 
