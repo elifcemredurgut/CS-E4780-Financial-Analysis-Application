@@ -4,6 +4,6 @@ loguru
 fastapi
 uvicorn
 requests
-redis.asyncio
+asyncio_redis
 redis-timeseries
 aioredis

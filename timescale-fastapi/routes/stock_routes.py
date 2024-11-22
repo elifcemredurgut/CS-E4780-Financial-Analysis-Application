@@ -142,21 +142,21 @@ async def get_stocks(
         ]
     return stocks
 
-@stock_router.get("/stocks/{stock_symbol}", response_model=List[Stock])
+@stock_router.get("/stocks/{stock_symbol}", response_model=List[StockPrice])
 async def get_stock_from_symbol(
     stock_symbol: str = Path(..., description="Symbol of desired stock"),
     db: Pool = Depends(get_timescale),
 ):
-    query = "SELECT * FROM stock WHERE symbol = $1;"
+    query = "SELECT stock.symbol, stock_price.dt, stock_price.price FROM stock INNER JOIN stock_price ON stock.id = stock_price.stock_id WHERE stock.symbol = $1;"
     async with db.acquire() as conn:
         rows = await conn.fetch(query, stock_symbol)
     if not rows:
         raise HTTPException(status_code=404, detail="No stocks found")
     stocks = [
-            Stock(
-                stock_id = row['id'],
-                symbol = row['symbol'],
-                security_type = row['security_type'],
+            StockPrice(
+                stock_symbol = row['symbol'],
+                timestamp = row['dt'],
+                price = row['price'],
             )
             for row in rows
         ]

@@ -8,6 +8,7 @@ class Stock(BaseModel):
     security_type: str
 
 class StockPrice(BaseModel):
+    stock_symbol: str
     timestamp: datetime
     price: float
 
