@@ -56,7 +56,7 @@ DECLARE
         breakout_time TIMESTAMP := NOW();
 BEGIN
 	IF NEW.ema38 > NEW.ema100 AND NEW.prev_ema38 <= NEW.prev_ema100 THEN
-		INSERT INTO breakouts (stock_id, dt, breakout_type, latency_start, latency_end)
+		INSERT INTO breakouts(stock_id, dt, breakout_type, latency_start, latency_end)
 			VALUES(NEW.stock_id, NEW.dt, 'bull', NEW.latency_start, breakout_time)
 			ON CONFLICT DO NOTHING;
 	END IF;
@@ -70,7 +70,7 @@ DECLARE
         breakout_time TIMESTAMP := NOW();
 BEGIN
         IF NEW.ema38 < NEW.ema100 AND NEW.prev_ema38 >= NEW.prev_ema100 THEN
-		INSERT INTO breakouts (stock_id, dt, breakout_type, latency_start, latency_end)
+		INSERT INTO breakouts(stock_id, dt, breakout_type, latency_start, latency_end)
                         VALUES(NEW.stock_id, NEW.dt, 'bear', NEW.latency_start, breakout_time)
 			ON CONFLICT DO NOTHING;
         END IF;

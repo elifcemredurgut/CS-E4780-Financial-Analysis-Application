@@ -6,6 +6,7 @@ input_file = '../python-db-helper/stocks.csv'
 output_file = 'realistic_time_ordered_data.csv'
 rows=100000
 frequent_stock_count=500
+frequent_stock_number=5
 
 stocks = []
 with open(input_file, mode='r') as file:
@@ -18,7 +19,7 @@ weights = [1 / (i + 1) for i in range(len(stocks))]
 total_weight = sum(weights)
 probabilities = [w / total_weight for w in weights]
 
-frequent_stocks = random.choices(stocks, probabilities, k=5)
+frequent_stocks = random.choices(stocks, probabilities, k=frequent_stock_number)
 
 stock_prices = {stock[0]: round(random.uniform(10, 1000), 2) for stock in stocks}
 start_time = datetime.strptime("2021-01-01 10:00:00", "%Y-%m-%d %H:%M:%S")

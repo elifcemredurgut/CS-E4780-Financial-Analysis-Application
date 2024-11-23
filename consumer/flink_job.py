@@ -14,9 +14,11 @@ from datetime import datetime
 from pyflink.common.typeinfo import RowTypeInfo
 from pyflink.datastream.output_tag import OutputTag
 from collections import defaultdict
+
 # Set up logging to write to the TaskManager log
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("FlinkTaskManagerLog")
+
 class EmaCalculator:
     def __init__(self, smoothing_factor):
         self.previous_ema = {}
@@ -27,6 +29,7 @@ class EmaCalculator:
         current_ema = (last_price * alpha) + (last_ema * (1 - alpha))
         self.previous_ema[symbol] = current_ema
         return current_ema
+
 class MyProcessWindowFunction(ProcessWindowFunction):
     def __init__(self):
         super().__init__()
@@ -96,7 +99,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 ema_value_100 = self.ema_calculator_100.calculate_ema(last_price, symbol, 100)
                 dt = datetime.strptime(f"{element['trading_date']} {element['Trading time']}", "%d-%m-%Y %H:%M:%S.%f")
                 starting_dt = datetime.strptime(f"{element['current_date']} {element['current_time']}", "%d/%m/%Y %H:%M:%S.%f")
-                logger.info(f"{symbol} {dt} {starting_dt}/n ")
+                logger.info(f"{stock_id} {symbol} {dt} {starting_dt} {ema_value_38} ")
                 row = Row(
                     stock_id,
                     dt,
@@ -114,20 +117,22 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 logger.warning(f"Stock ID for symbol {symbol} not found in cache.")
         except (KeyError, ValueError, json.JSONDecodeError) as e:
             logger.error(f"Error processing record: {e}")
+
 class CustomTimestampAssigner(TimestampAssigner):
     def extract_timestamp(self, element, record_timestamp):
         # Convert 'trading_date' and 'Trading time' into a single timestamp in milliseconds
         dt = datetime.strptime(f"{element['trading_date']} {element['Trading time']}", "%d-%m-%Y %H:%M:%S.%f")
         #logger.info(f"{dt}")
         return int(dt.timestamp() * 1000)  # Convert to milliseconds
+
 def process_kafka_stream():
     # Set up Flink environment
     env = StreamExecutionEnvironment.get_execution_environment()
     env.set_parallelism(1)
     env.set_stream_time_characteristic(TimeCharacteristic.EventTime)
-    # Configure Kafka consumer
+    
     properties = {
-        'bootstrap.servers': 'kafka2:9092',
+        'bootstrap.servers': 'kafka1:9092',
         'group.id': 'flink-consumer'
     }
     kafka_consumer = FlinkKafkaConsumer(
@@ -155,9 +160,10 @@ def process_kafka_stream():
     type_schema = [Types.INT(), Types.SQL_TIMESTAMP(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE(), Types.DOUBLE(), Types.SQL_TIMESTAMP()]
     type_info = RowTypeInfo(type_schema, type_name)
     processed_stream = processed_stream.map(lambda r: r, output_type=type_info)
+
     processed_stream.add_sink(
         JdbcSink.sink(
-            "INSERT INTO ema (stock_id, dt, prev_ema38, prev_ema100, ema38, ema100, latency_start) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO ema (stock_id, dt, prev_ema38, prev_ema100, ema38, ema100, latency_start) VALUES (?::int, ?::timestamp, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::timestamp)",
             type_info,
             JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
                 .with_url("jdbc:postgresql://timescaledb:5432/stocksdb")
