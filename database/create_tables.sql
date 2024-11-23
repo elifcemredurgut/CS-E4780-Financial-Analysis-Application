@@ -3,7 +3,7 @@ SET datestyle = 'ISO, DMY';
 
 CREATE TABLE stock (
 	id SERIAL PRIMARY KEY,
-	symbol TEXT NOT NULL,
+	symbol TEXT UNIQUE NOT NULL,
 	security_type TEXT NOT NULL
 );
 
