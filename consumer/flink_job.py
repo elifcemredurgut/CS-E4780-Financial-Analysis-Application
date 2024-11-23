@@ -128,7 +128,7 @@ class CustomTimestampAssigner(TimestampAssigner):
 def process_kafka_stream():
     # Set up Flink environment
     env = StreamExecutionEnvironment.get_execution_environment()
-    env.set_parallelism(1)
+    env.set_parallelism(6)
     env.set_stream_time_characteristic(TimeCharacteristic.EventTime)
     
     properties = {

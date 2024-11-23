@@ -200,7 +200,7 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 2  
+        taskmanager.numberOfTaskSlots: 6  
     volumes:
       - ./consumer/flink_job.py:/opt/flink_job.py
 
