@@ -221,6 +221,8 @@ services:
         jobmanager.rpc.address: jobmanager  
     volumes:
       - ./consumer/flink_job_ema.py:/opt/flink_job_ema.py  
+      - ./consumer/flink_job_ema.py:/opt/flink_job_price.py
+
   taskmanager:
     image: flink:1.20-scala_2.12
     depends_on:
@@ -231,9 +233,23 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 6  
+        taskmanager.numberOfTaskSlots: 4  
     volumes:
       - ./consumer/flink_job_ema.py:/opt/flink_job_ema.py
+      - ./consumer/flink_job_ema.py:/opt/flink_job_price.py
+
+  job-submitter:
+    image: flink:1.20-scala_2.12
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      jobmanager:
+        condition: service_started
+    volumes:
+      - ./consumer/submit_job.sh:/opt/submit_job.sh
+      - ./consumer/flink_job_ema.py:/opt/flink_job_ema.py
+      - ./consumer/flink_job_price.py:/opt/flink_job_price.py
+    entrypoint: ["/bin/bash", "/opt/submit_job.sh"]
 
   redis:
     image: redis:alpine

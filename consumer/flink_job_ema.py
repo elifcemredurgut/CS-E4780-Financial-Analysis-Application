@@ -111,39 +111,31 @@ class MyProcessWindowFunction(ProcessWindowFunction):
 
 class CustomTimestampAssigner(TimestampAssigner):
     def extract_timestamp(self, element, record_timestamp):
-        # Convert 'trading_date' and 'Trading time' into a single timestamp in millisecondss
         dt = datetime.strptime(f"{element['trading_date']} {element['Trading time']}", "%d-%m-%Y %H:%M:%S.%f")
-        #logger.info(f"{dt}")
         return int(dt.timestamp() * 1000)  # Convert to milliseconds
 
 class PurgeTrigger(Trigger):
     def on_element(self, element, timestamp, window, ctx):
-        # Continue collecting elements until the window ends
         return TriggerResult.CONTINUE
 
     def on_processing_time(self, time, window, ctx):
-        # No action on processing time
         return TriggerResult.CONTINUE
 
     def on_event_time(self, time, window, ctx):
-        # When the event time reaches the end of the window
         if time == window.max_timestamp():
-            # Fire the computation and purge the window's contents
             return TriggerResult.FIRE_AND_PURGE
         return TriggerResult.CONTINUE
 
     def on_merge(self, window, ctx):
-        # Tumbling windows don't merge; do nothing
         pass
 
     def clear(self, window, ctx):
-        # Clean up resources if needed (optional, e.g., timers)
         pass
         
 def process_kafka_stream():
     # Set up Flink environment
     env = StreamExecutionEnvironment.get_execution_environment()
-    env.set_parallelism(3)
+    env.set_parallelism(2)
     env.set_stream_time_characteristic(TimeCharacteristic.EventTime)
     
     properties = {

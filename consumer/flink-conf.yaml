@@ -1,2 +1,6 @@
-env.python.path: /usr/local/lib/python3.10/dist-packages
-python.executable: /usr/bin/python3
+# Memory Settings
+jobmanager.memory.process.size: 1024m
+taskmanager.memory.process.size: 2048m
+
+ 
+

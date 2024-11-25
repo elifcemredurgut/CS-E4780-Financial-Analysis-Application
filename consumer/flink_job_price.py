@@ -21,22 +21,10 @@ from pyflink.datastream.window import TriggerResult
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("FlinkTaskManagerLog")
 
-class EmaCalculator:
-    def __init__(self, smoothing_factor):
-        self.previous_ema = {}
-    def calculate_ema(self, last_price, symbol, smoothing_factor):
-        last_price = float(last_price)
-        last_ema = self.previous_ema.get(symbol, 0)
-        alpha = 2 / (1 + smoothing_factor)
-        current_ema = (last_price * alpha) + (last_ema * (1 - alpha))
-        self.previous_ema[symbol] = current_ema
-        return current_ema
 
 class MyProcessWindowFunction(ProcessWindowFunction):
     def __init__(self):
         super().__init__()
-        self.ema_calculator_38 = EmaCalculator(38)
-        self.ema_calculator_100 = EmaCalculator(100)
         self.symbol_id_map = self.load_symbol_id_map()
         self.side_output_tag = OutputTag('raw-stock-price', Types.ROW([Types.INT(), Types.SQL_TIMESTAMP(), Types.DOUBLE()]))
     def load_symbol_id_map(self) -> Dict[str, int]:
@@ -118,7 +106,7 @@ class PurgeTrigger(Trigger):
 def process_kafka_stream():
     # Set up Flink environment
     env = StreamExecutionEnvironment.get_execution_environment()
-    env.set_parallelism(3)
+    env.set_parallelism(2)
     env.set_stream_time_characteristic(TimeCharacteristic.EventTime)
     
     properties = {
@@ -140,7 +128,7 @@ def process_kafka_stream():
     # Apply event time window processing
     processed_stream = stream \
         .key_by(lambda msg: msg['ID']) \
-        .window(TumblingEventTimeWindows.of(Time.seconds(5))) \
+        .window(TumblingEventTimeWindows.of(Time.minutes(1))) \
         .trigger(PurgeTrigger()) \
         .process(MyProcessWindowFunction())
     # Get the side output for raw stock prices
