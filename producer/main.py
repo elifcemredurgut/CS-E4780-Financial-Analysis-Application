@@ -6,9 +6,11 @@ from confluent_kafka import Producer, KafkaError
 
 conf = {
     'bootstrap.servers': "kafka1:9092,kafka2:9092,kafka3:9092,kafka4:9092,kafka5:9092",
+    'acks': '1'
 }
 
 DATE_TIME_FORMAT = "%H:%M:%S.%f" 
+BATCH_SIZE = int(os.environ["BATCH_SIZE"])
 
 
 
@@ -23,6 +25,7 @@ try:
     for csv_file in csv_files:
         with open(csv_file, 'r') as file:
             is_first_line = True
+            counter = 1
             for line in file:
                 if line[0] == "#":
                     print("Comment line skipped.")
@@ -67,7 +70,10 @@ try:
 
                     value = {"ID": stock_id, "SecType": sec_type, "Last": last, "Trading time": trading_time, "trading_date": trading_date, "current_time": current_time, "current_date": current_date}
                     producer.produce("stocks", key=stock_id, value=json.dumps(value).encode('utf-8'))
-                producer.flush() 
+                if counter%BATCH_SIZE==0:
+                    producer.flush()
+                counter += 1
+        producer.flush()
 
 except KafkaError as e:
     print(f"Kafka error: {e}")

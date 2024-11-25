@@ -4,6 +4,11 @@ services:
   kafka1:
     image: confluentinc/cp-kafka:latest
     container_name: kafka1
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka1:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_NODE_ID: 1
@@ -15,7 +20,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 4
+      KAFKA_LOG_RETENTION_MINUTES: 10
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9092:9092"
@@ -24,6 +29,11 @@ services:
   kafka2:
     image: confluentinc/cp-kafka:latest
     container_name: kafka2
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka2:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_NODE_ID: 2
@@ -35,7 +45,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 4
+      KAFKA_LOG_RETENTION_MINUTES: 10
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9094:9092"
@@ -44,6 +54,11 @@ services:
   kafka3:
     image: confluentinc/cp-kafka:latest
     container_name: kafka3
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka3:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_NODE_ID: 3
@@ -55,7 +70,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 4
+      KAFKA_LOG_RETENTION_MINUTES: 10
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9096:9092"
@@ -64,6 +79,11 @@ services:
   kafka4:
     image: confluentinc/cp-kafka:latest
     container_name: kafka4
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka4:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       KAFKA_PROCESS_ROLES: broker
       KAFKA_NODE_ID: 4
@@ -75,7 +95,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 4
+      KAFKA_LOG_RETENTION_MINUTES: 10
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9098:9092"
@@ -83,6 +103,11 @@ services:
   kafka5:
     image: confluentinc/cp-kafka:latest
     container_name: kafka5
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka5:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       KAFKA_PROCESS_ROLES: broker
       KAFKA_NODE_ID: 5
@@ -94,7 +119,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
       KAFKA_LOG_CLEANUP_POLICY: delete  # Set log cleanup policy to delete
-      KAFKA_LOG_RETENTION_MINUTES: 4
+      KAFKA_LOG_RETENTION_MINUTES: 10
       KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS: 12000
     ports:
       - "9099:9092"
@@ -108,21 +133,27 @@ services:
         target: /create_topic.sh
     depends_on:
       kafka1:
-        condition: service_started
+        condition: service_healthy
     init: true
 
 
   producer:
     build: ./producer
     depends_on:
-      - kafka-init-topics
-      - kafka1
-      - kafka2
-      - kafka3
-      - kafka4
-      - kafka5
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+      kafka4:
+        condition: service_healthy
+      kafka5:
+        condition: service_healthy
     volumes:
       - ./producer/data:/app/data
+    environment:
+      BATCH_SIZE: 5000
 
   timescaledb:
     build:
