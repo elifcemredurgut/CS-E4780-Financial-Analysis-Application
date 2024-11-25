@@ -208,3 +208,17 @@ services:
     image: redis:alpine
     ports:
       - 6379:6379
+  
+  grafana:
+    image: grafana/grafana:10.0.2
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/provisioning:/etc/grafana/provisioning
+      - ./frontend/Financial Data Analysis.json:/etc/grafana/provisioning/dashboards/dashboard.json
+    environment:
+      - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DATE_FORMATS_FULL_DATE=YYYY-MM-DD HH:mm:ss.SSS
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=1s

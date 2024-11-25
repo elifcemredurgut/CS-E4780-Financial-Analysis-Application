@@ -1,0 +1,11 @@
+apiVersion: 1
+
+datasources:
+  - name: "Infinity Data Source"
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    url: "http://datamanagement-fastapi-1:8000"
+    uid: "ac9ce318-0ba8-4988-b6b9-a0ea942df4e2"
+    isDefault: false
+    jsonData:
+      authenticationMethod: none
