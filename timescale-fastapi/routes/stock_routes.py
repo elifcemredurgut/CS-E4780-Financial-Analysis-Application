@@ -78,7 +78,7 @@ async def get_stock_breakouts(
     exists = await redis_client.hexists(f"stocks", stock_symbol)
     if exists:
         async with db.acquire() as conn:
-            recent_breakouts = await conn.fetch("SELECT id, stock_id FROM breakouts ORDER BY id DESC LIMIT 20;")
+            recent_breakouts = await conn.fetch("SELECT id, stock_id FROM breakouts ORDER BY id DESC")
             stock_id = await conn.fetch("SELECT id FROM stock WHERE symbol = '"+ stock_symbol + "';")
         search_data = await redis_client.hget("stocks", stock_symbol)
         search_data = json.loads(search_data.decode('utf-8'))
