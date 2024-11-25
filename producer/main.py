@@ -6,9 +6,6 @@ from confluent_kafka import Producer, KafkaError
 
 conf = {
     'bootstrap.servers': "kafka1:9092,kafka2:9092,kafka3:9092,kafka4:9092,kafka5:9092",
-    'linger.ms': 0,  # Immediate send
-    'batch.size': 16384,
-    'acks': '1'
 }
 
 DATE_TIME_FORMAT = "%H:%M:%S.%f" 
