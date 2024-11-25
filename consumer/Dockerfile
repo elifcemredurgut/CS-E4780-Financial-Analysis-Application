@@ -40,8 +40,10 @@ RUN wget -P /opt/flink/lib/ https://repo.maven.apache.org/maven2/org/apache/flin
 RUN wget -P /opt/flink/lib/ https://jdbc.postgresql.org/download/postgresql-42.7.4.jar
 
 # Copy your PyFlink job script into the container
-COPY flink_job.py /opt/flink_job.py
-COPY flink_job_last_price.py /opt/flink_job_last_price.py
+COPY flink_job_ema.py /opt/flink_job_ema.py
+COPY flink_job_price.py /opt/flink_job_price.py
+COPY flink_job_same_window.py /opt/flink_job_same_window.py
+COPY flink_job_topic_read.py /opt/flink_job_topic_read.py
 # Set the default command to start the Flink JobManager or TaskManager
 CMD ["jobmanager"]
 
