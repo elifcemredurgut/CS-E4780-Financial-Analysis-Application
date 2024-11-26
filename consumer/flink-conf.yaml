@@ -2,5 +2,9 @@
 jobmanager.memory.process.size: 1024m
 taskmanager.memory.process.size: 2048m
 
- 
-
+taskmanager.registration.timeout: 100000
+heartbeat.timeout: 100000
+jobmanager.rpc.address: jobmanager
+blob.server.port: 6124
+query.server.port: 6125
+taskmanager.numberOfTaskSlots: 4 

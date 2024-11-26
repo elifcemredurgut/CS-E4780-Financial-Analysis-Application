@@ -89,7 +89,7 @@ def process_kafka_stream():
 
     # Configure Kafka consumer
     properties = {
-        'bootstrap.servers': 'kafka2:9092',
+        'bootstrap.servers': 'kafka3:9092',
         'group.id': 'flink-consumer'
     }
     kafka_consumer = FlinkKafkaConsumer(

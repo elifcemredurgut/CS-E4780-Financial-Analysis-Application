@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 
 input_file = '../python-db-helper/stocks.csv'
 output_file = 'realistic_time_ordered_data.csv'
-rows=100000
-frequent_stock_count=500
+rows=10000
+frequent_stock_count=100
 frequent_stock_number=5
 
 stocks = []

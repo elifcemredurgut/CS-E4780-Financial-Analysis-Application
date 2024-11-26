@@ -14,6 +14,8 @@ from datetime import datetime
 from pyflink.common.typeinfo import RowTypeInfo
 from pyflink.datastream.output_tag import OutputTag
 from collections import defaultdict
+from pyflink.datastream.window import Trigger
+from pyflink.datastream.window import TriggerResult
 
 # Set up logging to write to the TaskManager log
 logging.basicConfig(level=logging.INFO)
@@ -125,6 +127,24 @@ class CustomTimestampAssigner(TimestampAssigner):
         #logger.info(f"{dt}")
         return int(dt.timestamp() * 1000)  # Convert to milliseconds
 
+class PurgeTrigger(Trigger):
+    def on_element(self, element, timestamp, window, ctx):
+        return TriggerResult.CONTINUE
+
+    def on_processing_time(self, time, window, ctx):
+        return TriggerResult.CONTINUE
+
+    def on_event_time(self, time, window, ctx):
+        if time == window.max_timestamp():
+            return TriggerResult.FIRE_AND_PURGE
+        return TriggerResult.CONTINUE
+
+    def on_merge(self, window, ctx):
+        pass
+
+    def clear(self, window, ctx):
+        pass
+
 def process_kafka_stream():
     # Set up Flink environment
     env = StreamExecutionEnvironment.get_execution_environment()
@@ -144,13 +164,14 @@ def process_kafka_stream():
     stream = env.add_source(kafka_consumer).map(lambda msg: json.loads(msg))
     stream = stream.assign_timestamps_and_watermarks(
         WatermarkStrategy
-        .for_bounded_out_of_orderness(Duration.of_seconds(10))
+        .for_bounded_out_of_orderness(Duration.of_seconds(1))
         .with_timestamp_assigner(CustomTimestampAssigner())
     )
     # Apply event time window processing
     processed_stream = stream \
         .key_by(lambda msg: msg['ID']) \
         .window(TumblingEventTimeWindows.of(Time.minutes(5))) \
+        .trigger(PurgeTrigger()) \
         .process(MyProcessWindowFunction())
     # Get the side output for raw stock prices
     raw_stock_prices = processed_stream.get_side_output(MyProcessWindowFunction().side_output_tag)
