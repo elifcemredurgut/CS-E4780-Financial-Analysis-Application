@@ -19,7 +19,7 @@ producer = Producer(conf)
 
 
 path = os.getcwd()
-csv_files = glob.glob(os.path.join(path, "data", "*.csv"))
+csv_files = sorted(glob.glob(os.path.join(path, "data", "*.csv")))
 
 try:
     for csv_file in csv_files:
