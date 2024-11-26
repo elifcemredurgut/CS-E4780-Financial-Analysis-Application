@@ -310,7 +310,7 @@
                 "value": [
                   {
                     "title": "",
-                    "url": "http://localhost:3000/d/c5d19ecc-9f33-4eba-aaa3-ce2a07bb6327/financial-data-analysis?var-symbol_name=${__value.text}"
+                    "url": "http://localhost:3000/d/c5d19ecc-9f33-4eba-aaa3-ce2a07bb6327/financial-data-analysis?var-symbol_name=${__value.text}&refresh=5s"
                   }
                 ]
               }

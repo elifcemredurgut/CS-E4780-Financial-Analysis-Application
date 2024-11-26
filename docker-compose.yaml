@@ -150,8 +150,11 @@ services:
         condition: service_healthy
       kafka5:
         condition: service_healthy
+      job-submitter:
+        condition: service_completed_successfully
     volumes:
       - ./producer/data:/app/data
+    command: sh -c "sleep 10 && python main.py"
     environment:
       BATCH_SIZE: 5000
 
@@ -189,6 +192,7 @@ services:
     command: ["python", "populate_stocks.py"]
 
   fastapi:
+     container_name: datamanagement-fastapi-1
      build:
        context: ./timescale-fastapi
      depends_on:
