@@ -101,7 +101,7 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 ema_value_100 = self.ema_calculator_100.calculate_ema(last_price, symbol, 100)
                 dt = datetime.strptime(f"{element['trading_date']} {element['Trading time']}", "%d-%m-%Y %H:%M:%S.%f")
                 starting_dt = datetime.strptime(f"{element['current_date']} {element['current_time']}", "%d/%m/%Y %H:%M:%S.%f")
-                logger.info(f"{stock_id} {symbol} {dt} {starting_dt} {ema_value_38} ")
+                #logger.info(f"{stock_id} {symbol} {dt} {starting_dt} {ema_value_38} ")
                 row = Row(
                     stock_id,
                     dt,
