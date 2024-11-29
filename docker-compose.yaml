@@ -156,7 +156,7 @@ services:
       - ./producer/data:/app/data
     command: sh -c "sleep 10 && python main.py"
     environment:
-      BATCH_SIZE: 5000
+      BATCH_SIZE: 10000
 
   timescaledb:
     build:

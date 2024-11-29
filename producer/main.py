@@ -3,6 +3,7 @@ import glob
 import datetime
 import json
 from confluent_kafka import Producer, KafkaError
+import time
 
 conf = {
     'bootstrap.servers': "kafka1:9092,kafka2:9092,kafka3:9092,kafka4:9092,kafka5:9092",
@@ -39,7 +40,7 @@ try:
 
                 stock_id = values[0]
                 sec_type = values[1]
-                time = values[3]
+                temp_time = values[3]
                 last = values[21]
                 trading_time = values[23]
                 trading_date = values[26]
@@ -55,11 +56,11 @@ try:
                     value = f"{datetime.datetime.now()}: Last cannot be null"
                     producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
                 elif trading_time == '':
-                    if time == '':
+                    if temp_time == '':
                         value = f"{datetime.datetime.now()}: Trading time cannot be null"
                         producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
                     else:
-                        tradin_time = time
+                        trading_time = temp_time
                 elif trading_date == '':
                     value = f"{datetime.datetime.now()}: Trading date cannot be null"
                     producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
@@ -72,6 +73,8 @@ try:
                     producer.produce("stocks", key=stock_id, value=json.dumps(value).encode('utf-8'))
                 if counter%BATCH_SIZE==0:
                     producer.flush()
+                    time.sleep(1)
+
                 counter += 1
         producer.flush()
 
