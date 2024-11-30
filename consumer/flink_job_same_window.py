@@ -78,7 +78,8 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                     f1=dt,
                     f2=avg_price
                 )
-                #logger.info(f"raw price: {symbol} {dt} {avg_price}/n ")
+                #if stock_id == 2:
+                    #logger.info(f"raw price: {symbol} {dt} {avg_price}/n ")
                 yield self.side_output_tag, row_price
             #2nd Part - Calculating EMA's for the last data in the window
             #get the last element in the current window
@@ -101,7 +102,8 @@ class MyProcessWindowFunction(ProcessWindowFunction):
                 ema_value_100 = self.ema_calculator_100.calculate_ema(last_price, symbol, 100)
                 dt = datetime.strptime(f"{element['trading_date']} {element['Trading time']}", "%d-%m-%Y %H:%M:%S.%f")
                 starting_dt = datetime.strptime(f"{element['current_date']} {element['current_time']}", "%d/%m/%Y %H:%M:%S.%f")
-                #logger.info(f"{stock_id} {symbol} {dt} {starting_dt} {ema_value_38} ")
+                #if stock_id == 2:
+                    #logger.info(f"{stock_id} {symbol} {dt} {starting_dt} {ema_value_38} ")
                 row = Row(
                     stock_id,
                     dt,
@@ -135,7 +137,7 @@ class PurgeTrigger(Trigger):
         return TriggerResult.CONTINUE
 
     def on_event_time(self, time, window, ctx):
-        if time == window.max_timestamp():
+        if time >= window.max_timestamp():
             return TriggerResult.FIRE_AND_PURGE
         return TriggerResult.CONTINUE
 
@@ -152,7 +154,7 @@ def process_kafka_stream():
     env.set_stream_time_characteristic(TimeCharacteristic.EventTime)
     
     properties = {
-        'bootstrap.servers': 'kafka1:9092',
+        'bootstrap.servers': 'kafka4:9092',
         'group.id': 'flink-consumer'
     }
     kafka_consumer = FlinkKafkaConsumer(
@@ -164,7 +166,7 @@ def process_kafka_stream():
     stream = env.add_source(kafka_consumer).map(lambda msg: json.loads(msg))
     stream = stream.assign_timestamps_and_watermarks(
         WatermarkStrategy
-        .for_bounded_out_of_orderness(Duration.of_seconds(1))
+        .for_bounded_out_of_orderness(Duration.of_seconds(100))
         .with_timestamp_assigner(CustomTimestampAssigner())
     )
     # Apply event time window processing

@@ -2,6 +2,7 @@ import os
 import glob
 import datetime
 import json
+import time
 from confluent_kafka import Producer, KafkaError
 import time
 
@@ -57,10 +58,11 @@ try:
                     producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
                 elif trading_time == '':
                     if temp_time == '':
+                    if temp_time == '':
                         value = f"{datetime.datetime.now()}: Trading time cannot be null"
                         producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
                     else:
-                        trading_time = temp_time
+                        tradin_time = temp_time
                 elif trading_date == '':
                     value = f"{datetime.datetime.now()}: Trading date cannot be null"
                     producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
@@ -74,7 +76,6 @@ try:
                 if counter%BATCH_SIZE==0:
                     producer.flush()
                     time.sleep(1)
-
                 counter += 1
         producer.flush()
 
