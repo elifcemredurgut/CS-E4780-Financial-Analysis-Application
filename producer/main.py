@@ -58,7 +58,6 @@ try:
                     producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
                 elif trading_time == '':
                     if temp_time == '':
-                    if temp_time == '':
                         value = f"{datetime.datetime.now()}: Trading time cannot be null"
                         producer.produce("error", key=stock_id, value=value.encode("utf-8"))  # Send to error topic
                     else:
