@@ -22,8 +22,8 @@ probabilities = [w / total_weight for w in weights]
 frequent_stocks = random.choices(stocks, probabilities, k=frequent_stock_number)
 
 stock_prices = {stock[0]: round(random.uniform(10, 1000), 2) for stock in stocks}
-start_time = datetime.strptime("2021-01-01 10:00:00", "%Y-%m-%d %H:%M:%S")
-end_time = datetime.strptime("2021-01-01 11:00:00", "%Y-%m-%d %H:%M:%S")
+start_time = datetime.strptime("2021-11-08 00:00:00", "%Y-%m-%d %H:%M:%S")
+end_time = datetime.strptime("2021-11-08 01:00:00", "%Y-%m-%d %H:%M:%S")
 
 # Calculate time increment per row
 total_seconds = (end_time - start_time).total_seconds()

@@ -17,6 +17,12 @@ def load_symbol_id_map():
     conn.close()
     return symbol_id_map
 
+def round_up_to_next_five_minutes(dt):
+    total_seconds = dt.minute * 60 + dt.second + (dt.microsecond > 0)
+    if total_seconds % (5 * 60) != 0: 
+        dt += timedelta(minutes=(5 - (dt.minute % 5)), seconds=-dt.second, microseconds=-dt.microsecond)
+    return dt.replace(second=0, microsecond=0)
+
 symbols = load_symbol_id_map()
 BREAKOUT_PATH = "./actual/breakout.csv"
 EMA_PATH = "./actual/ema.csv"
@@ -30,8 +36,6 @@ class EMA():
         self.ema38 = self.calculate_ema(38)
         self.ema100 = self.calculate_ema(100)
         self.dt = dt
-        self.prev_ema38 = prev_ema38
-        self.prev_ema100 = prev_ema100
         self.stock_id = symbols[symbol]
         self.breakout_type = None
     def calculate_ema(self, factor):
@@ -124,9 +128,10 @@ for csv_file in csv_files:
                 new_price = Price(price=price, symbol=symbol, dt=trading_full_date.strftime("%Y-%m-%d").strip()+" "+trading_time.strip()+"000")
                 prices[symbol] = new_price
             elif trading_full_date >= window_end:
-                window_start = window_end
-                window_end += timedelta(minutes=5)
-                for symbol, price_object in prices.items():
+                #window_end += timedelta(minutes=5)
+                window_end = round_up_to_next_five_minutes(trading_full_date)
+                windows_start = window_end - timedelta(minutes=5)
+                for symbol, price_object in prices.items():   
                     if symbol in prev_emas:
                         prev_ema = prev_emas[symbol]
                         new_ema = EMA(price=price_object.price, dt=price_object.dt, symbol=price_object.symbol, prev_ema38=prev_ema.ema38, prev_ema100=prev_ema.ema100)
@@ -138,15 +143,13 @@ for csv_file in csv_files:
                         new_ema.ema_to_csv()
                         new_ema.breakouts_to_csv()
                         emas[symbol] = new_ema
-                prev_emas = emas
+                
+                for symbol, prev_ema in prev_emas.items():
+                    if symbol not in emas:
+                        emas[symbol] = prev_ema 
+                prev_emas = emas.copy()
                 emas = {}
                 
                 prices = {}
                 new_price = Price(price=price, symbol=symbol, dt=trading_full_date.strftime("%Y-%m-%d").strip()+" "+trading_time.strip()+"000")
                 prices[symbol] = new_price
-        
-
-
-        
-
-
