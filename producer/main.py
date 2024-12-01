@@ -28,6 +28,7 @@ try:
         with open(csv_file, 'r') as file:
             is_first_line = True
             counter = 1
+            data_counter = 1
             for line in file:
                 if line[0] == "#":
                     print("Comment line skipped.")
@@ -72,9 +73,13 @@ try:
 
                     value = {"ID": stock_id, "SecType": sec_type, "Last": last, "Trading time": trading_time, "trading_date": trading_date, "current_time": current_time, "current_date": current_date}
                     producer.produce("stocks", key=stock_id, value=json.dumps(value).encode('utf-8'))
+                    data_counter += 1
+                if data_counter%BATCH_SIZE==0:
+                    time.sleep(1)
+                    data_counter+=1
                 if counter%BATCH_SIZE==0:
                     producer.flush()
-                    time.sleep(1)
+
                 counter += 1
         producer.flush()
 
