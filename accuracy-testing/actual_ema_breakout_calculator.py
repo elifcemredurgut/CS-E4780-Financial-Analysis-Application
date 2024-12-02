@@ -131,25 +131,24 @@ for csv_file in csv_files:
                 #window_end += timedelta(minutes=5)
                 window_end = round_up_to_next_five_minutes(trading_full_date)
                 windows_start = window_end - timedelta(minutes=5)
-                for symbol, price_object in prices.items():   
-                    if symbol in prev_emas:
-                        prev_ema = prev_emas[symbol]
+                for price_symbol, price_object in prices.items():   
+                    if price_symbol in prev_emas:
+                        prev_ema = prev_emas[price_symbol]
                         new_ema = EMA(price=price_object.price, dt=price_object.dt, symbol=price_object.symbol, prev_ema38=prev_ema.ema38, prev_ema100=prev_ema.ema100)
                         new_ema.ema_to_csv()
                         new_ema.breakouts_to_csv()
-                        emas[symbol] = new_ema
+                        emas[price_symbol] = new_ema
                     else:
                         new_ema = EMA(price=price_object.price, dt=price_object.dt, symbol=price_object.symbol)
                         new_ema.ema_to_csv()
                         new_ema.breakouts_to_csv()
-                        emas[symbol] = new_ema
+                        emas[price_symbol] = new_ema
                 
-                for symbol, prev_ema in prev_emas.items():
-                    if symbol not in emas:
-                        emas[symbol] = prev_ema 
+                for ema_symbol, prev_ema in prev_emas.items():
+                    if ema_symbol not in emas:
+                        emas[ema_symbol] = prev_ema 
                 prev_emas = emas.copy()
                 emas = {}
-                
                 prices = {}
                 new_price = Price(price=price, symbol=symbol, dt=trading_full_date.strftime("%Y-%m-%d").strip()+" "+trading_time.strip()+"000")
                 prices[symbol] = new_price
