@@ -14,33 +14,69 @@ CONTRIBUTORS (A to Z):
 
 HOW TO RUN THE PROJECT?
 
-1) Run the project using the command below:
+1) Place the .csv files in /producer/data
+
+2) Run the project using the command below:
 ```
 docker-compose up --build
 ```
 
-2) Access the Grafana UI via the link below:
+3) Access the Grafana UI via the link below:
 
 http://localhost:3000/
 
-3) Enter the credentials:
+4) Enter the credentials:
 ```
 username: admin
 
 password: admin
 ```
 
-4)  Click on "Financial Data Analysis" in the "Recently accessed dashbords" bar
+5)  Click on "Financial Data Analysis" in the "Recently accessed dashbords" bar
 
-5) Select one or more stock symbol(s) to view their price graph and breakouts
+6) Select one or more stock symbol(s) to view their price graph and breakouts
 
-6) You can adjust the time range based on the data you have run.
+7) You can adjust the time range based on the data you have run.
 
-7) The default refresh time is set to 5 seconds, but you can turn it on/off from the top-right corner.
+8) The default refresh time is set to 5 seconds, but you can turn it on/off from the top-right corner.
 
-8) For additional details regarding Apache Flink, the UI and logs are available here:
+9) For additional details regarding Apache Flink, the UI and logs are available here:
 
 http://localhost:8081/
+
+----------------------------------------------------------------
+
+HOW TO TEST THE PROJECT?
+
+1) Accuracy Test
+
+1.1) Run the following file to calculate breakouts
+```
+cd /accuracy-testing
+python3 actual_ema_breakout_collector.py
+```
+
+1.2) Run the following file to get the breakouts from the system
+```
+python3 system_ema_breakout_collector.py
+```
+
+1.3) Run the following file to compare actual and system breakouts
+```
+python3 accuracy_checker.py
+```
+
+2) Latency Test
+
+2.1) Connect TimescaleDB container
+```
+psql -U postgres -d stocksdb
+```
+
+2.2) Run the following SQL statement:
+```
+select AVG(latency_end - latency_start)  from breakouts;
+```
 
 ----------------------------------------------------------------
 
