@@ -50,25 +50,25 @@ HOW TO TEST THE PROJECT?
 
 1) Accuracy Test
 
-1.1) Run the following file to calculate breakouts
+1.1) Run the following Python file to calculate breakouts:
 ```
 cd /accuracy-testing
 python3 actual_ema_breakout_collector.py
 ```
 
-1.2) Run the following file to get the breakouts from the system
+1.2) Run the following Python file to get the breakouts from the system:
 ```
 python3 system_ema_breakout_collector.py
 ```
 
-1.3) Run the following file to compare actual and system breakouts
+1.3) Run the following Python file to compare the actual breakouts and the system breakouts:
 ```
 python3 accuracy_checker.py
 ```
 
 2) Latency Test
 
-2.1) Connect TimescaleDB container
+2.1) Connect to TimescaleDB container:
 ```
 psql -U postgres -d stocksdb
 ```
