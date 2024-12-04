@@ -15,18 +15,20 @@ CONTRIBUTORS (A to Z):
 HOW TO RUN THE PROJECT?
 
 1) Run the project using the command below:
-
+```
 docker-compose up --build
+```
 
 2) Access the Grafana UI via the link below:
 
 http://localhost:3000/
 
 3) Enter the credentials:
-
+```
 username: admin
 
 password: admin
+```
 
 4)  Click on "Financial Data Analysis" in the "Recently accessed dashbords" bar
 
