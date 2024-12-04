@@ -396,7 +396,21 @@
             "filterable": true,
             "inspect": false
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "options": {
+                "bear": {
+                  "index": 1,
+                  "text": "Sell"
+                },
+                "bull": {
+                  "index": 0,
+                  "text": "Buy"
+                }
+              },
+              "type": "value"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -536,6 +550,6 @@
   "timezone": "Europe/Helsinki",
   "title": "Financial Data Analysis",
   "uid": "c5d19ecc-9f33-4eba-aaa3-ce2a07bb6327",
-  "version": 4,
+  "version": 1,
   "weekStart": ""
 }
