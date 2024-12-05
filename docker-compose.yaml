@@ -265,11 +265,6 @@ services:
     environment:
       - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
       - GF_DATE_FORMATS_FULL_DATE=YYYY-MM-DD HH:mm:ss.SSS
-
-      # Enable anonymous access
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       
       # Default admin credentials (for admin access if needed)
       - GF_SECURITY_ADMIN_USER=admin
