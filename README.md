@@ -82,14 +82,6 @@ select AVG(latency_end - latency_start)  from breakouts;
 
 PROJECT DOCUMENTS
 
-The project requirements link given by the course instructor:
-
-TO BE ADDED
-
-The project report link:
-
-TO BE ADDED
-
 Project Demo Video:
 
 https://youtu.be/DMKm5llYghA
